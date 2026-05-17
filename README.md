@@ -10,7 +10,7 @@ docker compose up --build
 
 Services:
 
-- Client: http://localhost:5173
+- Client: http://localhost:5175
 - Server: http://localhost:5000
 - PostgreSQL: localhost:5433
 
