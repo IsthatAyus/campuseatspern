@@ -1,16 +1,18 @@
 const app = require('./app');
 const { pool } = require('./db');
-// Ensure password_hash column exists in users table (helps when DB persisted from older schema)
-async function ensurePasswordHashColumn() {
+// Ensure user columns exist in users table (helps when DB persisted from older schema)
+async function ensureUserColumns() {
   try {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS balance NUMERIC(10, 2) NOT NULL DEFAULT 0");
     console.log('Ensured password_hash column exists');
+    console.log('Ensured balance column exists');
   } catch (err) {
-    console.error('Error ensuring password_hash column:', err.message);
+    console.error('Error ensuring user columns:', err.message);
   }
 }
 
-ensurePasswordHashColumn();
+ensureUserColumns();
 
 const port = process.env.PORT || 5000;
 

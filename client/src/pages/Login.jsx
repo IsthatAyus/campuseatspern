@@ -166,22 +166,7 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* Divider */}
-              <div className="relative py-1.5 flex items-center gap-1.5">
-                <div className="flex-grow border-t border-gray-200"></div>
-                <span className="text-base text-on-surface-variant/60 font-medium px-1">OR</span>
-                <div className="flex-grow border-t border-gray-200"></div>
-              </div>
 
-              {/* Social Logins */}
-              <div className="grid grid-cols-2 gap-1.5">
-                <button type="button" className="py-2 px-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors font-medium text-base">
-                  Google
-                </button>
-                <button type="button" className="py-2 px-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors font-medium text-base">
-                  EduPass
-                </button>
-              </div>
             </form>
 
             {/* Signup Link */}
