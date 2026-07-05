@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../lib/api';
+import Navbar from '../components/Navbar';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
 
   const balance = Number(user?.balance ?? 0);
   const canReorder = Number(user?.order_count ?? 0) > 0;
@@ -91,7 +93,7 @@ export default function Dashboard() {
       try {
         const userData = await getCurrentUser(token);
         setUser(userData);
-      } catch (err) {
+      } catch (_) {
         localStorage.removeItem('token');
         navigate('/login');
       } finally {
@@ -102,58 +104,24 @@ export default function Dashboard() {
     fetchUser();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
+
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-background text-on-surface">
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col gap-6 border-r border-outline-variant/30 bg-surface-container p-6 shadow-lg md:flex">
-        <div className="flex flex-col px-1 py-1">
-          <span className="text-2xl font-bold text-primary">CampusEats</span>
-          <span className="text-xs uppercase tracking-widest text-on-surface-variant">Himalayan Dining</span>
-        </div>
-
-        <nav className="flex flex-grow flex-col gap-2">
-          <Link
-            className="flex items-center gap-4 rounded-xl bg-primary-container px-4 py-3 text-on-primary-container shadow-sm transition-transform duration-150 active:scale-95"
-            to="/dashboard"
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-              dashboard
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Dashboard</span>
-          </Link>
-          <Link className="flex items-center gap-4 rounded-xl px-4 py-3 text-on-surface-variant transition-all duration-300 hover:bg-surface-container-high" to="/menu">
-            <span className="material-symbols-outlined">restaurant_menu</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Menu</span>
-          </Link>
-          <a className="flex items-center gap-4 rounded-xl px-4 py-3 text-on-surface-variant transition-all duration-300 hover:bg-surface-container-high" href="#">
-            <span className="material-symbols-outlined">receipt_long</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Orders</span>
-          </a>
-          <a className="flex items-center gap-4 rounded-xl px-4 py-3 text-on-surface-variant transition-all duration-300 hover:bg-surface-container-high" href="#">
-            <span className="material-symbols-outlined">person</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Profile</span>
-          </a>
-        </nav>
-
-        <div className="mt-auto px-1 py-1">
-          <div className="rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-4 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs text-on-surface-variant">Credit Balance</span>
-              <span className="material-symbols-outlined text-[18px] text-primary">account_balance_wallet</span>
-            </div>
-            <div className="text-2xl font-bold text-primary">रू {balance.toFixed(2)}</div>
+    <Navbar
+      activePath="/dashboard"
+      userRole={user?.role || 'student'}
+      sidebarFooter={
+        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-4 shadow-sm">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs text-on-surface-variant">Credit Balance</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">account_balance_wallet</span>
           </div>
+          <div className="text-2xl font-bold text-primary">रू {balance.toFixed(2)}</div>
         </div>
-      </aside>
-
-      <main className="min-h-screen md:ml-64">
+      }
+      desktopHeader={
         <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 bg-surface-bright/80 px-4 shadow-sm backdrop-blur-md sm:px-6 lg:px-8">
           <div className="flex w-full max-w-xl items-center gap-4">
             <div className="relative w-full">
@@ -172,17 +140,27 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
+      }
+      mobileNav={
+        <button className="fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-2xl transition-all hover:scale-110 active:scale-95 md:hidden">
+          <span className="material-symbols-outlined">restaurant</span>
+        </button>
+      }
+      onOrders={() => {}}
+      onProfile={() => {}}
+    >
+      <div className="mx-auto max-w-7xl space-y-10 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
 
-        <div className="mx-auto max-w-7xl space-y-10 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <section className="space-y-2">
-            <div className="flex flex-col">
-              <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">Namaste, {user?.full_name || 'Student'}</h1>
-              <p className="text-lg text-on-surface-variant">Ready for your favorite Himalayan flavors today?</p>
-            </div>
-          </section>
+        <section className="space-y-2">
+          <div className="flex flex-col">
+            <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">Namaste, {user?.full_name || 'Student'}</h1>
+            <p className="text-lg text-on-surface-variant">Ready for your favorite Himalayan flavors today?</p>
+          </div>
+        </section>
 
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="relative flex h-[240px] flex-col justify-between overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-lg lg:col-span-4">
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="relative flex h-[240px] flex-col justify-between overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-lg lg:col-span-4">
+
               <div className="z-10">
                 <p className="text-xs uppercase tracking-widest opacity-90">Campus Credit Balance</p>
                 <h2 className="mt-2 text-5xl font-bold">रू {balance.toFixed(2)}</h2>
@@ -321,11 +299,11 @@ export default function Dashboard() {
             </div>
           </section>
         </div>
-      </main>
-
-      <button className="fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-2xl transition-all hover:scale-110 active:scale-95 md:hidden">
-        <span className="material-symbols-outlined">restaurant</span>
-      </button>
-    </div>
+    </Navbar>
   );
 }
+
+
+
+
+

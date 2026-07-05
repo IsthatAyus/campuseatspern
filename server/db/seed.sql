@@ -1,8 +1,12 @@
-INSERT INTO users (full_name, email, role)
+-- Seed demo users with passwords
+-- Password for all users: password123
+-- Hash generated: $2b$10$h0.aNL1wWT9CNqjvsjeou.toXoGTQDKoYyUXAfYV8FD6JxeDWI0AS
+INSERT INTO users (full_name, email, password_hash, role, balance)
 VALUES
-  ('Aarav Sharma', 'aarav@example.com', 'student'),
-  ('Maya Patel', 'maya@example.com', 'student'),
-  ('Admin User', 'admin@campuseats.local', 'admin')
+  ('Aarav Sharma', 'aarav@example.com', '$2b$10$h0.aNL1wWT9CNqjvsjeou.toXoGTQDKoYyUXAfYV8FD6JxeDWI0AS', 'student', 500.00),
+  ('Maya Patel', 'maya@example.com', '$2b$10$h0.aNL1wWT9CNqjvsjeou.toXoGTQDKoYyUXAfYV8FD6JxeDWI0AS', 'student', 750.00),
+  ('Admin User', 'admin@campuseats.local', '$2b$10$h0.aNL1wWT9CNqjvsjeou.toXoGTQDKoYyUXAfYV8FD6JxeDWI0AS', 'admin', 1000.00),
+  ('Canteen Manager', 'canteen@campuseats.local', '$2b$10$h0.aNL1wWT9CNqjvsjeou.toXoGTQDKoYyUXAfYV8FD6JxeDWI0AS', 'canteen', 0.00)
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO restaurants (name, cuisine, location, is_open)

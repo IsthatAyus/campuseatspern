@@ -7,7 +7,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://server:5000',
+        // When running Vite on the host (npm run dev), `server` hostname won't resolve.
+        // Keep docker usage working by allowing override via env var.
+        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:5000',
         changeOrigin: true
       }
     }

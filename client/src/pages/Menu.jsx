@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../lib/api';
+import { useCart } from '../context/CartContext';
+import Navbar from '../components/Navbar';
 
 const CATEGORIES = ['All Items', 'Momo', 'Chowmein', 'Paratha', 'Beverages', 'Snacks'];
 
@@ -73,10 +75,12 @@ export default function Menu() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All Items');
-  const [cartCount, setCartCount] = useState(3);
+  const [addedItems, setAddedItems] = useState({});
+  const { addToCart, getCartCount } = useCart();
   const navigate = useNavigate();
 
   const balance = Number(user?.balance ?? 0);
+  const cartCount = getCartCount();
 
   const filteredItems = useMemo(() => {
     if (activeCategory === 'All Items') return MENU_ITEMS;
@@ -94,10 +98,13 @@ export default function Menu() {
       try {
         const userData = await getCurrentUser(token);
         setUser(userData);
-      } catch (err) {
+      } catch (_) {
+        // ignore fetch errors; user will be redirected
+
         localStorage.removeItem('token');
         navigate('/login');
       } finally {
+
         setLoading(false);
       }
     };
@@ -107,52 +114,40 @@ export default function Menu() {
 
   const addToTray = (item) => {
     if (item.soldOut) return;
-    setCartCount((prev) => prev + 1);
+    addToCart({
+      id: item.id || item.name.replace(/\s+/g, '_'),
+      name: item.name,
+      price: item.price,
+      description: item.description,
+      image: item.image,
+      category: item.category,
+      restaurant_id: 1, // Assuming default restaurant for now
+      restaurant_name: 'Campus Bites',
+    });
+    setAddedItems((prev) => ({ ...prev, [item.name]: true }));
+    setTimeout(() => setAddedItems((prev) => ({ ...prev, [item.name]: false })), 1500);
   };
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-background text-on-surface">
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col gap-lg border-r border-outline-variant/30 bg-surface-container p-md shadow-lg md:flex">
-        <div className="px-md py-sm">
-          <h1 className="text-2xl font-bold text-primary">CampusEats</h1>
-          <p className="text-xs uppercase tracking-wider text-on-surface-variant">Himalayan Dining</p>
-        </div>
-
-        <nav className="flex flex-col gap-sm">
-          <Link className="flex items-center gap-md rounded-xl px-md py-sm text-on-surface-variant transition-all duration-300 hover:bg-surface-container-high" to="/dashboard">
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Dashboard</span>
-          </Link>
-          <Link className="flex scale-[0.98] items-center gap-md rounded-xl bg-primary-container px-md py-sm text-on-primary-container shadow-sm" to="/menu">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>restaurant_menu</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Menu</span>
-          </Link>
-          <button className="flex items-center gap-md rounded-xl px-md py-sm text-on-surface-variant transition-all duration-300 hover:bg-surface-container-high" type="button">
-            <span className="material-symbols-outlined">receipt_long</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Orders</span>
-          </button>
-          <button className="flex items-center gap-md rounded-xl px-md py-sm text-on-surface-variant transition-all duration-300 hover:bg-surface-container-high" type="button">
-            <span className="material-symbols-outlined">person</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">Profile</span>
-          </button>
-        </nav>
-
-        <div className="mt-auto rounded-2xl bg-surface-container-low p-md">
+    <Navbar
+      activePath="/menu"
+      userRole={user?.role || 'student'}
+      sidebarFooter={
+        <div className="rounded-2xl bg-surface-container-low p-4">
           <p className="text-sm font-semibold text-on-surface">{user?.full_name || 'Student'}</p>
           <p className="text-xs text-on-surface-variant">Student ID: {user?.id ?? '-'}</p>
           <p className="mt-2 text-xs text-on-surface-variant">No profile uploaded</p>
         </div>
-      </aside>
-
-      <main className="min-h-screen md:ml-64">
-        <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between bg-surface-bright/80 px-lg shadow-sm backdrop-blur-md">
-          <div className="flex items-center gap-md">
+      }
+      desktopHeader={
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 bg-surface-bright/80 px-8 shadow-sm backdrop-blur-md">
+          <div className="flex items-center gap-4">
             <span className="text-3xl font-bold text-primary">Menu</span>
           </div>
-          <div className="flex items-center gap-md">
-            <div className="relative cursor-pointer rounded-full bg-surface-container-high p-sm transition-colors duration-200 hover:bg-surface-container-highest">
+          <div className="flex items-center gap-4">
+            <div className="relative cursor-pointer rounded-full bg-surface-container-high p-2 transition-colors duration-200 hover:bg-surface-container-highest">
               <span className="material-symbols-outlined text-primary">shopping_basket</span>
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-on-primary">
                 {cartCount}
@@ -162,99 +157,93 @@ export default function Menu() {
               <span className="text-xs text-on-surface-variant">Wallet Balance</span>
               <span className="text-sm font-bold text-primary">रू {balance.toFixed(2)}</span>
             </div>
-            <button className="material-symbols-outlined text-on-surface-variant md:hidden" type="button">menu</button>
           </div>
         </header>
+      }
+      mobileNav={
+        <button className="fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-2xl transition-all hover:scale-110 active:scale-95 md:hidden">
+          <span className="material-symbols-outlined">shopping_basket</span>
+        </button>
+      }
+      onOrders={() => {}}
+      onProfile={() => {}}
+    >
+      <div className="sticky top-20 z-30 flex items-center gap-4 overflow-x-auto whitespace-nowrap bg-background/95 px-8 py-4 backdrop-blur-sm">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => setActiveCategory(cat)}
+            className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all shadow-sm ${
+              activeCategory === cat
+                ? 'bg-primary text-on-primary'
+                : 'bg-surface-container-high text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
-        <div className="sticky top-20 z-30 flex items-center gap-md overflow-x-auto whitespace-nowrap bg-background/95 px-lg py-md backdrop-blur-sm">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`rounded-full px-md py-sm text-xs font-semibold uppercase tracking-wider transition-all shadow-sm ${
-                activeCategory === cat
-                  ? 'bg-primary text-on-primary'
-                  : 'bg-surface-container-high text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container'
-              }`}
-            >
-              {cat}
-            </button>
+      <section className="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredItems.map((item) => (
+            <div key={item.name} className="group overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-lowest shadow-[0_4px_12px_rgba(133,83,0,0.04)] transition-all hover:shadow-[0_12px_24px_rgba(133,83,0,0.08)]">
+              <div className={`relative h-48 overflow-hidden ${item.soldOut ? 'opacity-80 grayscale-[0.5]' : ''}`}>
+                <img alt={item.name} className={`h-full w-full object-cover transition-transform duration-500 ${item.soldOut ? '' : 'group-hover:scale-110'}`} src={item.image} />
+                {item.soldOut && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <span className="rounded-full bg-red-500 px-4 py-2 text-xs font-bold uppercase text-white">Sold Out</span>
+                  </div>
+                )}
+                <span className="absolute top-4 right-4 rounded-full bg-white/90 px-4 py-2 font-bold text-primary shadow-sm backdrop-blur-md">
+                  रू {item.price}
+                </span>
+              </div>
+
+              <div className="p-4">
+                <h3 className={`text-lg font-bold ${item.soldOut ? 'text-on-surface/60' : 'text-on-surface'}`}>{item.name}</h3>
+                <p className={`mt-2 text-xs ${item.soldOut ? 'text-on-surface-variant/60' : 'text-on-surface-variant'}`}>{item.description}</p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {item.badges.map((badge) => (
+                    <span key={`${item.name}-${badge}`} className={`${badgeClass(badge, item.soldOut)} rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider`}>
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={item.soldOut}
+                  onClick={() => addToTray(item)}
+                  className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-semibold uppercase tracking-wider transition-all ${
+                    item.soldOut
+                      ? 'cursor-not-allowed bg-surface-container-high text-on-surface-variant/40'
+                      : addedItems[item.name]
+                      ? 'bg-green-500 text-white shadow-md'
+                      : 'bg-primary text-on-primary shadow-md hover:bg-primary/90 active:scale-95'
+                  }`}
+                >
+                  {item.soldOut ? (
+                    'Unavailable'
+                  ) : addedItems[item.name] ? (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                      Added!
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                      Add to Tray
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           ))}
         </div>
-
-        <section className="px-lg pb-2xl">
-          <div className="mt-md grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredItems.map((item) => (
-              <div key={item.name} className="group overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-lowest shadow-[0_4px_12px_rgba(133,83,0,0.04)] transition-all hover:shadow-[0_12px_24px_rgba(133,83,0,0.08)]">
-                <div className={`relative h-48 overflow-hidden ${item.soldOut ? 'opacity-80 grayscale-[0.5]' : ''}`}>
-                  <img alt={item.name} className={`h-full w-full object-cover transition-transform duration-500 ${item.soldOut ? '' : 'group-hover:scale-110'}`} src={item.image} />
-                  {item.soldOut && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <span className="rounded-full bg-red-500 px-md py-xs text-xs font-bold uppercase text-white">Sold Out</span>
-                    </div>
-                  )}
-                  <span className="absolute top-md right-md rounded-full bg-white/90 px-md py-xs font-bold text-primary shadow-sm backdrop-blur-md">
-                    रू {item.price}
-                  </span>
-                </div>
-
-                <div className="p-md">
-                  <h3 className={`text-lg font-bold ${item.soldOut ? 'text-on-surface/60' : 'text-on-surface'}`}>{item.name}</h3>
-                  <p className={`mt-xs text-xs ${item.soldOut ? 'text-on-surface-variant/60' : 'text-on-surface-variant'}`}>{item.description}</p>
-
-                  <div className="mt-md flex flex-wrap items-center gap-sm">
-                    {item.badges.map((badge) => (
-                      <span key={`${item.name}-${badge}`} className={`${badgeClass(badge, item.soldOut)} rounded-full px-sm py-xs text-[10px] font-bold uppercase tracking-wider`}>
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={item.soldOut}
-                    onClick={() => addToTray(item)}
-                    className={`mt-lg flex w-full items-center justify-center gap-sm rounded-xl py-sm text-xs font-semibold uppercase tracking-wider transition-all ${
-                      item.soldOut
-                        ? 'cursor-not-allowed bg-surface-container-high text-on-surface-variant/40'
-                        : 'bg-primary text-on-primary shadow-md hover:bg-primary-container hover:text-on-primary-container active:scale-95'
-                    }`}
-                  >
-                    {item.soldOut ? (
-                      'Unavailable'
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-                        Add to Tray
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-around border-t border-outline-variant/20 bg-surface-bright/95 px-lg py-sm backdrop-blur-lg md:hidden">
-        <Link className="flex flex-col items-center gap-xs text-on-surface-variant" to="/dashboard">
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-bold uppercase">Home</span>
-        </Link>
-        <Link className="flex flex-col items-center gap-xs text-primary" to="/menu">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>restaurant_menu</span>
-          <span className="text-[10px] font-bold uppercase">Menu</span>
-        </Link>
-        <button className="flex flex-col items-center gap-xs text-on-surface-variant" type="button">
-          <span className="material-symbols-outlined">receipt_long</span>
-          <span className="text-[10px] font-bold uppercase">Orders</span>
-        </button>
-        <button className="flex flex-col items-center gap-xs text-on-surface-variant" type="button">
-          <span className="material-symbols-outlined">person</span>
-          <span className="text-[10px] font-bold uppercase">Profile</span>
-        </button>
-      </div>
-    </div>
+      </section>
+    </Navbar>
   );
 }
