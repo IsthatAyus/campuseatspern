@@ -8,7 +8,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ full_name: '', balance: 0 });
+  const [formData, setFormData] = useState({ full_name: '' });
   const [message, setMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
 
@@ -23,10 +23,7 @@ export default function Profile() {
       try {
         const userData = await getCurrentUser(token);
         setUser(userData);
-        setFormData({
-          full_name: userData.full_name || '',
-          balance: userData.balance || 0,
-        });
+        setFormData({ full_name: userData.full_name || '' });
       } catch (err) {
         console.error('Error fetching user:', err);
       } finally {
@@ -39,10 +36,7 @@ export default function Profile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'balance' ? parseFloat(value) || 0 : value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
@@ -56,7 +50,7 @@ export default function Profile() {
 
     try {
       const token = localStorage.getItem('token');
-      const updated = await updateProfile(token, formData.full_name, formData.balance);
+      const updated = await updateProfile(token, formData.full_name);
       setUser(updated);
       setEditing(false);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
@@ -88,9 +82,7 @@ export default function Profile() {
           <p className="text-xs text-on-surface-variant">Student ID: {displayUser.id ?? '-'}</p>
           <p className="mt-2 text-xs text-on-surface-variant">Member since</p>
           <p className="text-xs font-semibold text-on-surface">
-            {displayUser.created_at
-              ? new Date(displayUser.created_at).toLocaleDateString()
-              : 'N/A'}
+            {displayUser.created_at ? new Date(displayUser.created_at).toLocaleDateString() : 'N/A'}
           </p>
         </div>
       }
@@ -120,25 +112,13 @@ export default function Profile() {
     >
       <div className="mx-auto max-w-2xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
         {message.text && (
-          <div
-            className={`rounded-lg p-4 flex items-center gap-3 ${
-              message.type === 'success'
-                ? 'border border-green-200 bg-green-50'
-                : 'border border-error/20 bg-error/10'
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined ${
-                message.type === 'success' ? 'text-green-600' : 'text-error'
-              }`}
-            >
+          <div className={`rounded-lg p-4 flex items-center gap-3 ${
+            message.type === 'success' ? 'border border-green-200 bg-green-50' : 'border border-error/20 bg-error/10'
+          }`}>
+            <span className={`material-symbols-outlined ${message.type === 'success' ? 'text-green-600' : 'text-error'}`}>
               {message.type === 'success' ? 'check_circle' : 'error'}
             </span>
-            <p
-              className={`text-sm font-semibold ${
-                message.type === 'success' ? 'text-green-700' : 'text-error'
-              }`}
-            >
+            <p className={`text-sm font-semibold ${message.type === 'success' ? 'text-green-700' : 'text-error'}`}>
               {message.text}
             </p>
           </div>
@@ -162,10 +142,7 @@ export default function Profile() {
             <button
               onClick={() => {
                 if (editing) {
-                  setFormData({
-                    full_name: displayUser.full_name || '',
-                    balance: displayUser.balance || 0,
-                  });
+                  setFormData({ full_name: displayUser.full_name || '' });
                   setMessage({ type: '', text: '' });
                 }
                 setEditing(!editing);
@@ -185,6 +162,7 @@ export default function Profile() {
             <div className="text-center">
               <p className="text-xs text-on-surface-variant mb-1">Wallet Balance</p>
               <p className="text-2xl font-bold text-primary">रू {parseFloat(displayUser.balance || 0).toFixed(2)}</p>
+              <p className="text-xs text-on-surface-variant mt-1">Topped up by canteen</p>
             </div>
             <div className="text-center">
               <p className="text-xs text-on-surface-variant mb-1">Total Orders</p>
@@ -194,23 +172,18 @@ export default function Profile() {
               <p className="text-xs text-on-surface-variant mb-1">Member Since</p>
               <p className="text-sm font-bold text-on-surface">
                 {displayUser.created_at
-                  ? new Date(displayUser.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      year: '2-digit',
-                    })
+                  ? new Date(displayUser.created_at).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
                   : 'N/A'}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Edit Form */}
+        {/* Edit Form — name only */}
         {editing && (
           <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-lowest p-8 shadow-md">
             <h3 className="mb-6 text-lg font-bold text-on-surface">Edit Profile</h3>
-
             <div className="space-y-6">
-              {/* Full Name */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-on-surface-variant">Full Name</label>
                 <input
@@ -222,26 +195,6 @@ export default function Profile() {
                   placeholder="Enter your name"
                 />
               </div>
-
-              {/* Wallet Balance */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-on-surface-variant">
-                  Wallet Balance (रू)
-                </label>
-                <input
-                  type="number"
-                  name="balance"
-                  value={formData.balance}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-high px-4 py-3 text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-                  placeholder="Enter balance"
-                />
-                <p className="text-xs text-on-surface-variant">Current balance: रू {parseFloat(displayUser.balance || 0).toFixed(2)}</p>
-              </div>
-
-              {/* Save Button */}
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -259,28 +212,21 @@ export default function Profile() {
             <span className="material-symbols-outlined">history</span>
             Activity
           </h3>
-
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-lg bg-surface-container-high p-4">
               <div>
                 <p className="text-sm font-semibold text-on-surface">Total Orders</p>
-                <p className="text-xs text-on-surface-variant">
-                  {displayUser.order_count || 0} orders placed
-                </p>
+                <p className="text-xs text-on-surface-variant">{displayUser.order_count || 0} orders placed</p>
               </div>
               <span className="text-2xl font-bold text-primary">{displayUser.order_count || 0}</span>
             </div>
-
             <div className="flex items-center justify-between rounded-lg bg-surface-container-high p-4">
               <div>
                 <p className="text-sm font-semibold text-on-surface">Account Created</p>
                 <p className="text-xs text-on-surface-variant">
                   {displayUser.created_at
                     ? new Date(displayUser.created_at).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
+                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
                       })
                     : 'N/A'}
                 </p>
@@ -288,7 +234,6 @@ export default function Profile() {
               <span className="material-symbols-outlined text-primary">calendar_today</span>
             </div>
           </div>
-
           <button
             onClick={() => navigate('/orders')}
             className="mt-4 w-full rounded-lg border border-primary bg-primary/10 px-4 py-3 font-bold text-primary transition-colors hover:bg-primary/20"
@@ -303,11 +248,9 @@ export default function Profile() {
             <span className="material-symbols-outlined">warning</span>
             Danger Zone
           </h3>
-
           <p className="mb-4 text-sm text-on-surface-variant">
             Once you logout, you'll need to sign in again to access your account.
           </p>
-
           <button
             onClick={handleLogout}
             className="w-full rounded-lg bg-error px-4 py-3 font-bold uppercase tracking-wider text-on-primary transition-all hover:bg-error/90 active:scale-95"

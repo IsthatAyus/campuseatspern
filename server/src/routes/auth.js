@@ -15,14 +15,13 @@ router.post('/signup', async (req, res) => {
       [full_name, email, hash, role]
     );
     const user = result.rows[0];
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '2h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
     res.json({ user, token });
   } catch (err) {
     res.status(500).json({ error: 'DB error' });
   }
 });
 
-// Login: simple email-based login for demo (no password)
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
@@ -33,7 +32,7 @@ router.post('/login', async (req, res) => {
     if (!user.password_hash) return res.status(400).json({ error: 'Password not set for user' });
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '2h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
     res.json({ user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role, balance: user.balance }, token });
   } catch (err) {
     res.status(500).json({ error: 'DB error' });

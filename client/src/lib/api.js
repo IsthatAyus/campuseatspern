@@ -248,3 +248,77 @@ export const addStudentBalance = async (token, email, amount) => {
   }
   return parseResponse(res);
 };
+
+// ===== ADMIN - STUDENTS =====
+
+export const updateStudent = async (token, id, data) => {
+  const res = await fetch(`${API_BASE}/admin/students/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await parseResponse(res);
+    throw new Error(err?.error || 'Failed to update student');
+  }
+  return parseResponse(res);
+};
+
+export const deleteStudent = async (token, id) => {
+  const res = await fetch(`${API_BASE}/admin/students/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await parseResponse(res);
+    throw new Error(err?.error || 'Failed to delete student');
+  }
+  return parseResponse(res);
+};
+
+// ===== ADMIN - CANTEEN USERS =====
+
+export const addCanteenUser = async (token, data) => {
+  const res = await fetch(`${API_BASE}/admin/canteen-users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await parseResponse(res);
+    throw new Error(err?.error || 'Failed to add canteen user');
+  }
+  return parseResponse(res);
+};
+
+export const updateCanteenUser = async (token, id, data) => {
+  const res = await fetch(`${API_BASE}/admin/canteen-users/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await parseResponse(res);
+    throw new Error(err?.error || 'Failed to update canteen user');
+  }
+  return parseResponse(res);
+};
+
+export const deleteCanteenUser = async (token, id) => {
+  const res = await fetch(`${API_BASE}/admin/canteen-users/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await parseResponse(res);
+    throw new Error(err?.error || 'Failed to delete canteen user');
+  }
+  return parseResponse(res);
+};
+
+// ===== PUBLIC MENU =====
+export const getPublicMenu = async () => {
+  const res = await fetch(`${API_BASE}/menu`);
+  if (!res.ok) throw new Error('Failed to fetch menu');
+  return parseResponse(res);
+};

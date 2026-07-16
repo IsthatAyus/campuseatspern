@@ -63,13 +63,13 @@ router.get('/orders', auth, async (req, res) => {
   }
 });
 
-// Update user profile
+// Update user profile — balance excluded, only canteen can top up
 router.put('/profile', auth, async (req, res) => {
-  const { full_name, balance } = req.body;
+  const { full_name } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE users SET full_name = COALESCE($1, full_name), balance = COALESCE($2, balance) WHERE id = $3 RETURNING id, full_name, email, role, balance, created_at`,
-      [full_name || null, balance || null, req.user.id]
+      `UPDATE users SET full_name = COALESCE($1, full_name) WHERE id = $2 RETURNING id, full_name, email, role, balance, created_at`,
+      [full_name || null, req.user.id]
     );
     if (result.rowCount === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
@@ -81,26 +81,23 @@ router.put('/profile', auth, async (req, res) => {
 // Place order from cart
 router.post('/orders', auth, async (req, res) => {
   const { restaurant_id, items, total_amount } = req.body;
-  
+
   if (!restaurant_id || !items || items.length === 0) {
     return res.status(400).json({ error: 'Missing restaurant_id or items' });
   }
 
   try {
-    // Start transaction
     await pool.query('BEGIN');
-    
-    // Create order
+
     const orderResult = await pool.query(
       `INSERT INTO orders (user_id, restaurant_id, status, total_amount) 
        VALUES ($1, $2, 'pending', $3) 
        RETURNING id`,
       [req.user.id, restaurant_id, total_amount]
     );
-    
+
     const orderId = orderResult.rows[0].id;
-    
-    // Add order items
+
     for (const item of items) {
       await pool.query(
         `INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price) 
@@ -108,15 +105,14 @@ router.post('/orders', auth, async (req, res) => {
         [orderId, item.menu_item_id, item.quantity, item.unit_price]
       );
     }
-    
-    // Deduct balance
+
     await pool.query(
       `UPDATE users SET balance = balance - $1 WHERE id = $2`,
       [total_amount, req.user.id]
     );
-    
+
     await pool.query('COMMIT');
-    
+
     res.json({ id: orderId, status: 'pending', total_amount });
   } catch (err) {
     await pool.query('ROLLBACK');

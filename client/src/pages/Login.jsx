@@ -19,7 +19,14 @@ export default function Login() {
       const data = await login(email, password);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+
+      if (data.user.role === 'admin') {
+        navigate('/admin');
+      } else if (data.user.role === 'canteen') {
+        navigate('/canteen');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -165,8 +172,6 @@ export default function Login() {
                   <span className="material-symbols-outlined text-xs">arrow_forward</span>
                 </button>
               </div>
-
-
             </form>
 
             {/* Signup Link */}
