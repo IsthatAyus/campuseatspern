@@ -3,35 +3,34 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(120) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash TEXT,
-  role VARCHAR(20) NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin','canteen')),
+  role VARCHAR(20) NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'canteen')),
   balance NUMERIC(10, 2) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS restaurants (
+CREATE TABLE IF NOT EXISTS canteens (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(150) NOT NULL UNIQUE,
-  cuisine VARCHAR(80) NOT NULL,
-  location VARCHAR(120) NOT NULL,
-  is_open BOOLEAN NOT NULL DEFAULT TRUE,
+  name VARCHAR(150) NOT NULL,
+  location VARCHAR(150),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS menu_items (
   id SERIAL PRIMARY KEY,
-  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  canteen_id INTEGER NOT NULL REFERENCES canteens(id) ON DELETE CASCADE,
   name VARCHAR(150) NOT NULL,
   description TEXT,
   price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
   is_available BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (restaurant_id, name)
+  UNIQUE (canteen_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE RESTRICT,
+  canteen_id INTEGER NOT NULL REFERENCES canteens(id) ON DELETE RESTRICT,
   status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled')),
   total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -47,7 +46,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   UNIQUE (order_id, menu_item_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_menu_items_restaurant_id ON menu_items(restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_menu_items_canteen_id ON menu_items(canteen_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_orders_restaurant_id ON orders(restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_orders_canteen_id ON orders(canteen_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
